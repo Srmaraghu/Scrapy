@@ -1,5 +1,5 @@
 import scrapy
-
+from bookscraper.items import BookItem 
 
 class BookspiderSpider(scrapy.Spider):
     name = "bookspider"
@@ -32,25 +32,29 @@ class BookspiderSpider(scrapy.Spider):
 
 
     def parse_book_page(self,response):
-        item = {}
-
-        #product information
-        table_rows = response.css("table tr")
-        for i in range(1,7):
-            key = table_rows[i].css('th::text').get()
-            value = table_rows[i].css('td::text').get()
-            item[key] = value
+        item = BookItem()
 
 
         item['url'] = response.url
         item['title'] = response.css('.product_main h1::text').get()
         item['description'] = response.xpath("//div[@id='product_description']/following-sibling::p/text()").get()
-
-        item['category']=response.xpath("//ul[@class='breadcrumb']/li[@class='active']/preceding-sibling::li[1]/a/text()").get()
-
+        item['category'] = response.xpath("//ul[@class='breadcrumb']/li[@class='active']/preceding-sibling::li[1]/a/text()").get()
         item['stars'] = response.css('p.star-rating').attrib['class']
 
-        item['price']= response.css('.price_color::text').get()   
+
+         # Extract values from table
+        table_data = {
+            row.css('th::text').get(): row.css('td::text').get()
+            for row in response.css('table tr')
+        }
+
+        item['product_type'] = table_data.get('Product Type')
+        item['price_excl_tax'] = table_data.get('Price (excl. tax)')
+        item['price_incl_tax'] = table_data.get('Price (incl. tax)')
+        item['tax'] = table_data.get('Tax')
+        item['availability'] = table_data.get('Availability')
+        item['number_of_reviews'] = table_data.get('Number of reviews')
+
 
         yield item
 
