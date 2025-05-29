@@ -6,6 +6,9 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 BOT_NAME = "bookscraper"
 
@@ -15,6 +18,11 @@ NEWSPIDER_MODULE = "bookscraper.spiders"
 FEEDS = {
     'booksdata.json' :{'format':'json'}, #to specify where to save the output
 }
+SCRAPEOPS_API_KEY = os.environ.get("SCRAPEOPS_API_KEY")
+SCRAPEOPS_FAKE_USER_AGENT_ENDPOINT= "https://headers.scrapeops.io/v1/user-agents"
+SCRAPEOPS_FAKE_BROWSER_HEADER_ENDPOINT='https://headers.scrapeops.io/v1/browser-headers'
+SCRAPEOPS_FAKE_USER_AGENT_ENABLED = True
+SCRAPEOPS_NUM_RESULTS = 50
 ADDONS = {}
 
 
@@ -54,9 +62,12 @@ ADDONS = {}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
+DOWNLOADER_MIDDLEWARES = {
 #    "bookscraper.middlewares.BookscraperDownloaderMiddleware": 543,
-#}
+#    "bookscraper.middlewares.ScrapeOpsFakeUAMiddleware": 543,
+   "bookscraper.middlewares.ScrapeOpsFakeHeaderMiddleware": 543,
+   
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -68,7 +79,7 @@ ADDONS = {}
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    "bookscraper.pipelines.BookscraperPipeline": 300,
-   "bookscraper.pipelines.SaveToMySql": 400,
+   # "bookscraper.pipelines.SaveToMySql": 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
