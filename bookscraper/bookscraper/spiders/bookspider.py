@@ -6,6 +6,13 @@ class BookspiderSpider(scrapy.Spider):
     allowed_domains = ["books.toscrape.com"]
     start_urls = ["https://books.toscrape.com"]
 
+    custom_settings = {
+        'FEEDS': #overrides FEEDS in settings.py
+        {
+            'books2data.json':{'format':'json','overwrite':True}   ,
+        }
+    }
+
     def parse(self, response):
         #get all books  
         books = response.css('article.product_pod')

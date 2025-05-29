@@ -6,7 +6,12 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+import mysql.connector
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
 
 class BookscraperPipeline:
     def process_item(self, item, spider):
@@ -55,17 +60,80 @@ class BookscraperPipeline:
         stars_text_value = split_stars_array[1].lower
 
         if stars_text_value == "zero":
-            adapter['stars'] == 0
+            adapter['stars'] = 0
         elif stars_text_value == "One":
-            adapter['stars'] == 1
+            adapter['stars'] = 1
         elif stars_text_value == "Two":
-            adapter['stars'] == 2
+            adapter['stars'] = 2
         elif stars_text_value == "Three":
-            adapter['stars'] == 3
+            adapter['stars'] = 3
         elif stars_text_value == "Four":
-            adapter['stars'] == 4
+            adapter['stars'] = 4
         elif stars_text_value == "Five":
-            adapter['stars'] == 5
+            adapter['stars'] = 5
 
 
         return item
+
+
+class SaveToMySql:
+
+    def __init__(self):
+        self.conn = mysql.connector.connect(
+            host=os.getenv("MYSQL_HOST"),
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DATABASE")
+            )
+
+        self.cur = self.conn.cursor()
+
+         # Create table if it doesn't exist
+        self.cur.execute("""
+            CREATE TABLE IF NOT EXISTS books (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                url TEXT,
+                title VARCHAR(255),
+                description TEXT,
+                category VARCHAR(100),
+                stars VARCHAR(50),
+                product_type VARCHAR(100),
+                price_excl_tax VARCHAR(20),
+                price_incl_tax VARCHAR(20),
+                tax VARCHAR(20),
+                availability VARCHAR(100),
+                number_of_reviews INT
+            )
+        """)
+        self.conn.commit()
+
+    
+
+    def process_item(self, item, spider):
+        self.cur.execute("""
+            INSERT INTO books (
+                url, title, description, category, stars,
+                product_type, price_excl_tax, price_incl_tax,
+                tax, availability, number_of_reviews
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            item.get('url'),
+            item.get('title'),
+            item.get('description'),
+            item.get('category'),
+            item.get('stars'),
+            item.get('product_type'),
+            item.get('price_excl_tax'),
+            item.get('price_incl_tax'),
+            item.get('tax'),
+            item.get('availability'),
+            int(item.get('number_of_reviews') or 0)
+        ))
+
+        self.conn.commit()
+        return item
+
+
+    def close_spider(self,spider):
+        self.cur.close()
+        self.conn.close()
